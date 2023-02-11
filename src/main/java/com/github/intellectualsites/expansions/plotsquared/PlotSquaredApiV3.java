@@ -1,22 +1,24 @@
 package com.github.intellectualsites.expansions.plotsquared;
 
-import com.github.intellectualsites.plotsquared.plot.PlotSquared;
-import com.github.intellectualsites.plotsquared.plot.object.Plot;
-import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
-import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
+import com.intellectualcrafters.plot.PS;
+import com.intellectualcrafters.plot.object.PlotPlayer;
+import com.intellectualcrafters.plot.util.UUIDHandler;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.Set;
 import java.util.UUID;
 
-public class PlotSquaredApiNew implements PlotSquaredApiInterface {
+public class PlotSquaredApiV3 implements PlotSquaredApiInterface {
 
-    private PlotSquared api;
+    private final Configuration config;
+    private final PS api;
 
-    public PlotSquaredApiNew() {
-        this.api = PlotSquared.get();
+    public PlotSquaredApiV3(Configuration config) {
+        this.config = config;
+        this.api = PS.get();
     }
 
     @Override
@@ -25,7 +27,6 @@ public class PlotSquaredApiNew implements PlotSquaredApiInterface {
             return "";
         }
         final PlotPlayer pl = PlotPlayer.get(p.getName());
-        final Plot plot = pl.getCurrentPlot();
         if (pl == null) {
             return "";
         }
@@ -52,16 +53,34 @@ public class PlotSquaredApiNew implements PlotSquaredApiInterface {
                 if (pl.getCurrentPlot() == null) {
                     return "";
                 }
+
                 final Set<UUID> o = pl.getCurrentPlot().getOwners();
                 if (o == null || o.isEmpty()) {
                     return "";
                 }
-                final UUID uid = (UUID) o.toArray()[0];
-                if (uid == null) {
+
+                final UUID uuid = (UUID) o.toArray()[0];
+                if (uuid == null) {
                     return "";
                 }
-                final String name = UUIDHandler.getName(uid);
-                return (name != null) ? name : ((Bukkit.getOfflinePlayer(uid) != null) ? Bukkit.getOfflinePlayer(uid).getName() : "unknown");
+
+                final String name = UUIDHandler.getName(uuid);
+                if (name != null) {
+                    return name;
+                }
+
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                if (offlinePlayer != null) {
+                    return offlinePlayer.getName();
+                }
+
+                return "Unknown";
+            }
+            case "is_plot": {
+                return pl.getCurrentPlot() != null ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+            }
+            case "is_plot_world": {
+                return api.hasPlotArea(p.getWorld().getName()) ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
             }
             case "currentplot_world": {
                 return p.getWorld().getName();
@@ -100,7 +119,7 @@ public class PlotSquaredApiNew implements PlotSquaredApiInterface {
                 if (pl.getCurrentPlot().getTrusted() == null) {
                     return "0";
                 }
-                return String.valueOf(plot.getTrusted().size());
+                return String.valueOf(pl.getCurrentPlot().getTrusted().size());
             }
             case "currentplot_members_denied": {
                 if (pl.getCurrentPlot() == null) {
@@ -118,13 +137,13 @@ public class PlotSquaredApiNew implements PlotSquaredApiInterface {
                 if (pl.getCurrentPlot() == null) {
                     return "";
                 }
-                return String.valueOf(plot.getId().x);
+                return String.valueOf(pl.getCurrentPlot().getId().x);
             }
             case "currentplot_y": {
                 if (pl.getCurrentPlot() == null) {
                     return "";
                 }
-                return String.valueOf(plot.getId().y);
+                return String.valueOf(pl.getCurrentPlot().getId().y);
             }
             case "currentplot_xy": {
                 if (pl.getCurrentPlot() == null) {
@@ -136,13 +155,19 @@ public class PlotSquaredApiNew implements PlotSquaredApiInterface {
                 if (pl.getCurrentPlot() == null) {
                     return "";
                 }
-                return String.valueOf(plot.getAverageRating());
+
+                double rating = pl.getCurrentPlot().getAverageRating();
+                if (Double.isNaN(rating)) {
+                    return config.getNoRatings();
+                }
+
+                return String.valueOf((int) (rating * 100) / 100D);
             }
             case "currentplot_biome": {
                 if (pl.getCurrentPlot() == null) {
                     return "";
                 }
-                return plot.getBiome() + "";
+                return pl.getCurrentPlot().getBiome();
             }
             default:
                 break;

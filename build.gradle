@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 apply plugin: 'java'
 apply plugin: 'maven'
 
@@ -13,22 +15,42 @@ repositories {
     maven { url "https://jitpack.io" }
     maven { url "https://repo.maven.apache.org/maven2" }
     maven { url "https://maven.enginehub.org/repo/" }
+    maven {
+        name "IntellectualSites Releases"
+        url "https://mvn.intellectualsites.com/content/repositories/releases/"
+    }
 }
 
 dependencies {
-    compile group: 'org.bukkit', name: 'bukkit', version: '1.12.2-R0.1-SNAPSHOT'
-    compileOnly group: 'me.clip', name: 'placeholderapi', version: '2.10.4'
-    compileOnly(group: 'com.github.intellectualsites.plotsquared', name: 'PlotSquared-API', version: 'latest') {
-        exclude(module: 'worldedit-core')
-    }
-    compileOnly(group: 'com.plotsquared', name: 'plotsquared-api', version: 'latest') {
-        exclude(module: 'worldedit-core')
-    }
+    compileOnly group: 'org.bukkit', name: 'bukkit', version: '1.12.2-R0.1-SNAPSHOT'
+    compileOnly group: 'me.clip', name: 'placeholderapi', version: '2.11.2'
+    compileOnly(fileTree("libs"))
     compileOnly 'com.sk89q.worldedit:worldedit-core:7.0.1'
+
+    compileOnly 'org.jetbrains:annotations:16.0.2'
 }
 
 clean.doFirst {
     delete "../target"
 }
 
-jar.destinationDirectory = file('./target')
+
+jar {
+    destinationDirectory = file('./target')
+    manifest {
+        attributes(
+                "Manifest-Version": "1.0",
+                "Created-By": "Gradle ${gradle.gradleVersion}",
+                "Built-By": System.properties["user.name"],
+                "Built-On": new SimpleDateFormat("dd.MM.yyyy'T'HH:mm:ss").format(new Date()),
+                //"Build-Revision": versioning.info.commit,
+                "Build-Jdk": "${System.properties["java.version"]} (${System.properties["java.vendor"]} ${System.properties["java.vm.version"]})",
+                "Build-OS": "${System.properties["os.name"]} ${System.properties["os.arch"]} ${System.properties["os.version"]}",
+                "Implementation-Title": "${project.name}",
+                "Implementation-Version": "${project.version}",
+                "Implementation-Vendor": "com.github.intellectualsites.expansions.plotsquared",
+                "Specification-Title": "${project.name}",
+                "Specification-Version": "${project.version}"
+        )
+    }
+}
